@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-constexpr uint32_t MEMORY_SIZE = 0x1000000;  // 16 MB de memoria
+constexpr uint32_t MEMORY_SIZE = 0x1000000;
 
 class Simulator {
 private:
@@ -15,7 +15,6 @@ private:
     uint32_t regs[32] = {};
     std::vector<uint8_t> memory;
 
-    // ---- Memoria little-endian: el byte menos significativo va primero ----
     uint8_t load8(uint32_t addr) {
         if (addr >= MEMORY_SIZE) {
             printf("Error: direccion fuera de memoria 0x%08X\n", addr);
@@ -51,7 +50,7 @@ private:
 public:
     Simulator()
         : memory(MEMORY_SIZE) {
-        regs[2] = MEMORY_SIZE;  // sp empieza al final de la memoria
+        regs[2] = MEMORY_SIZE;
     }
 
     bool load_from_file(const std::string& filename) {
@@ -71,7 +70,6 @@ public:
     void step() {
         uint32_t instr = load32(pc);
 
-        // Campos (siempre en la misma posicion en RISC-V)
         uint32_t opcode = instr & 0x7F;         // Bits 6:0
         uint32_t rd = (instr >> 7) & 0x1F;      // Bits 11:7
         uint32_t funct3 = (instr >> 12) & 0x7;  // Bits 14:12
@@ -79,8 +77,6 @@ public:
         uint32_t rs2 = (instr >> 20) & 0x1F;    // Bits 24:20
         uint32_t funct7 = instr >> 25;          // Bits 31:25
 
-        // Inmediatos con signo. Al convertir a int32_t y correr a la derecha
-        // se copia el bit 31 (el signo) hacia la izquierda.
         int32_t imm_i = (int32_t)instr >> 20;
         int32_t imm_s = (((int32_t)instr >> 25) << 5) | ((instr >> 7) & 0x1F);
         int32_t imm_b = (((int32_t)instr >> 31) << 12) | (((instr >> 7) & 0x1) << 11) |
@@ -204,7 +200,7 @@ public:
         if (write_rd && rd != 0)  // x0 siempre vale 0
             regs[rd] = result;
 
-        // Un salto a si mismo (ej. "done: j done") es el fin del programa
+        // Un salto a si mismo
         if (pc == old_pc) {
             printf("Fin del programa (bucle infinito en 0x%08X).\n", pc);
             halted = true;
@@ -255,7 +251,6 @@ int main(int argc, char** argv) {
             printf("pc = 0x%08X\n", sim.get_pc());
 
         } else if (cmd == "regs") {
-            // "regs" muestra todos; "regs 5 10" muestra x5 y x10
             int n;
             bool any = false;
             while (ss >> n && n >= 0 && n < 32) {
@@ -267,7 +262,6 @@ int main(int argc, char** argv) {
                     printf("x%d = 0x%08X (%d)\n", i, sim.get_reg(i), (int32_t)sim.get_reg(i));
 
         } else if (cmd == "mem") {
-            // "mem 0x1000 0x101B" muestra los bytes en ese rango
             std::string s1, s2;
             ss >> s1 >> s2;
             uint32_t start = std::stoul(s1, nullptr, 0);
